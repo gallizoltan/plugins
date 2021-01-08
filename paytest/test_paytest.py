@@ -43,10 +43,18 @@ def test_mpp_pay(node_factory):
     l1, l2 = node_factory.line_graph(2, opts=pluginopt, wait_for_announce=True)
     res = l1.rpc.paytest(l2.info['id'], 10**8)
 
+    from pprint import pprint
+    #pprint(res)
+
     l2.daemon.wait_for_log(r'Received 100000000/100000000 with [0-9]+ parts')
 
     parts = res['status']['attempts']
     assert len(parts) > 2  # Initial split + >1 part
-    outcomes = [p['failure']['data']['failcode'] for p in parts if 'failure' in p]
+
+    failures = [p['failure']['data'] for p in parts if 'failure' in p and 'data' in p['failure']]
+    pprint(failures)
+
+    outcomes = [f['failcode'] for f in failures]
     is16399 = [p == 16399 for p in outcomes]
     assert all(is16399)
+    assert len(is16399) >= 1
